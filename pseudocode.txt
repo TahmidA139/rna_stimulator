@@ -1,0 +1,287 @@
+================================================================================
+PSEUDOCODE: RNA Sequence Simulator
+================================================================================
+Author: Your Name
+Date: 2026
+Purpose: Plan the logic for generating synthetic RNA sequences in FASTA format.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SECTION 1: DATA DEFINITIONS (sequence_lib.py)
+--------------------------------------------------------------------------------
+
+DEFINE RNA_NUCLEOTIDES = ['A', 'U', 'G', 'C']
+DEFINE IUPAC_AMBIGUITY_CODES = ['N', 'R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V']
+DEFINE START_CODON = 'AUG'
+DEFINE STOP_CODONS = ['UAA', 'UAG', 'UGA']
+
+
+--------------------------------------------------------------------------------
+SECTION 2: LIBRARY FUNCTIONS (sequence_lib.py)
+--------------------------------------------------------------------------------
+
+FUNCTION get_gc_content(sequence: string) -> float:
+    INPUT: sequence — an RNA sequence string
+    OUTPUT: GC content as a percentage (0.0 to 100.0)
+
+    IF sequence is empty THEN
+        RAISE ValueError("Sequence must not be empty")
+    END IF
+
+    gc_count = 0
+    FOR EACH nucleotide IN sequence (uppercase):
+        IF nucleotide is 'G' OR nucleotide is 'C' THEN
+            INCREMENT gc_count
+        END IF
+    END FOR
+
+    RETURN (gc_count / length of sequence) * 100, rounded to 2 decimal places
+
+
+FUNCTION get_ambiguity_content(sequence: string) -> float:
+    INPUT: sequence — an RNA sequence string
+    OUTPUT: Ambiguity content as a percentage (0.0 to 100.0)
+
+    IF sequence is empty THEN
+        RAISE ValueError("Sequence must not be empty")
+    END IF
+
+    ambig_count = 0
+    FOR EACH nucleotide IN sequence (uppercase):
+        IF nucleotide is in IUPAC_AMBIGUITY_CODES THEN
+            INCREMENT ambig_count
+        END IF
+    END FOR
+
+    RETURN (ambig_count / length of sequence) * 100, rounded to 2 decimal places
+
+
+FUNCTION generate_random_codon() -> string:
+    INPUT: none
+    OUTPUT: a random 3-character string from RNA_NUCLEOTIDES
+
+    RETURN 3 characters randomly chosen from RNA_NUCLEOTIDES
+
+
+FUNCTION is_start_codon(codon: string) -> bool:
+    INPUT: codon — a 3-character RNA codon string
+    OUTPUT: True if codon equals START_CODON ('AUG'), False otherwise
+
+    RETURN (uppercase(codon) == 'AUG')
+
+
+FUNCTION is_stop_codon(codon: string) -> bool:
+    INPUT: codon — a 3-character RNA codon string
+    OUTPUT: True if codon is in STOP_CODONS, False otherwise
+
+    RETURN (uppercase(codon) IN ['UAA', 'UAG', 'UGA'])
+
+
+FUNCTION generate_random_sequence(length: integer) -> string:
+    INPUT: length — desired number of nucleotides (>= 1)
+    OUTPUT: random RNA sequence of given length
+
+    IF length < 1 THEN
+        RAISE ValueError("Length must be >= 1")
+    END IF
+
+    sequence = ""
+    REPEAT length times:
+        sequence += randomly chosen character from RNA_NUCLEOTIDES
+    END REPEAT
+
+    RETURN sequence
+
+
+FUNCTION write_fasta(sequences: list of (id, description, sequence) tuples,
+                     output_file: string) -> None:
+    INPUT: sequences — list of tuples (sequence_id, description, sequence)
+           output_file — path to the FASTA output file
+    OUTPUT: None (writes to file)
+
+    IF sequences is empty THEN
+        RAISE ValueError("Sequences list must not be empty")
+    END IF
+
+    OPEN output_file for writing:
+        FOR EACH (seq_id, description, sequence) IN sequences:
+            WRITE ">" + seq_id + " " + description + newline
+            FOR EACH 70-character chunk OF sequence:
+                WRITE chunk + newline
+            END FOR
+        END FOR
+    CLOSE file
+
+
+--------------------------------------------------------------------------------
+SECTION 3: SIMULATOR CLASS (simulator.py)
+--------------------------------------------------------------------------------
+
+CLASS Simulator:
+
+    ATTRIBUTES:
+        num_sequences     : integer — total sequences to generate
+        min_orf_length    : integer — minimum ORF length (nucleotides)
+        max_orf_length    : integer — maximum ORF length (nucleotides)
+        flanking_probability : float — chance (0–1) of adding flanking regions
+        flanking_length   : integer — length of each flanking region
+        completeness_ratio : float — fraction of sequences that are complete ORFs
+
+    METHOD __init__(num_sequences, min_orf_length, max_orf_length,
+                    flanking_probability, flanking_length, completeness_ratio):
+        INPUT: all class attributes as parameters
+        OUTPUT: initialized Simulator object
+
+        VALIDATE num_sequences >= 1
+        VALIDATE min_orf_length >= 3
+        VALIDATE max_orf_length >= min_orf_length
+        VALIDATE flanking_probability IN [0.0, 1.0]
+        VALIDATE flanking_length >= 1
+        VALIDATE completeness_ratio IN [0.0, 1.0]
+
+        IF any validation fails THEN
+            RAISE ValueError with descriptive message
+        END IF
+
+        ASSIGN all validated values to instance attributes
+
+
+    METHOD generate_orf(complete: bool = True) -> string:
+        INPUT: complete — True for a complete ORF, False for partial
+        OUTPUT: RNA sequence string representing the ORF
+
+        target_length = random integer between min_orf_length and max_orf_length
+
+        IF complete is False THEN
+            RETURN generate_random_sequence(target_length)
+        END IF
+
+        # Build complete ORF: AUG + body + stop codon
+        body_length = target_length - 6   # subtract AUG (3) and stop codon (3)
+        num_body_codons = body_length // 3
+
+        body_codons = empty list
+        REPEAT num_body_codons times:
+            codon = generate_random_codon()
+            WHILE is_stop_codon(codon):      # avoid premature stop
+                codon = generate_random_codon()
+            END WHILE
+            APPEND codon to body_codons
+        END REPEAT
+
+        stop_codon = randomly chosen from STOP_CODONS
+        RETURN START_CODON + join(body_codons) + stop_codon
+
+
+    METHOD generate_sequence() -> (string, bool, bool):
+        INPUT: none
+        OUTPUT: tuple of (sequence, is_complete, is_flanked)
+
+        is_complete = (random float < completeness_ratio)
+        orf = generate_orf(complete = is_complete)
+
+        is_flanked = (random float < flanking_probability)
+        IF is_flanked THEN
+            five_prime  = generate_random_sequence(flanking_length)
+            three_prime = generate_random_sequence(flanking_length)
+            sequence = five_prime + orf + three_prime
+        ELSE
+            sequence = orf
+        END IF
+
+        RETURN (sequence, is_complete, is_flanked)
+
+
+    METHOD generate_sequences() -> list of (id, description, sequence) tuples:
+        INPUT: none
+        OUTPUT: list of tuples ready for FASTA output
+
+        results = empty list
+        FOR i FROM 1 TO num_sequences (inclusive):
+            seq_id = "seq_" + zero-padded(i, 3 digits)
+            (sequence, is_complete, is_flanked) = generate_sequence()
+
+            gc        = get_gc_content(sequence)
+            ambiguity = get_ambiguity_content(sequence)
+            seq_type  = "complete" IF is_complete ELSE "partial"
+            flanked   = "yes" IF is_flanked ELSE "no"
+
+            description = "length=<len> gc_content=<gc> ambiguity=<ambiguity>
+                           type=<seq_type> flanked=<flanked>"
+
+            APPEND (seq_id, description, sequence) to results
+        END FOR
+
+        RETURN results
+
+
+    METHOD save_fasta(output_file: string) -> None:
+        INPUT: output_file — path to the output FASTA file
+        OUTPUT: None (writes sequences to file)
+
+        sequences = generate_sequences()
+        write_fasta(sequences, output_file)
+
+
+--------------------------------------------------------------------------------
+SECTION 4: MAIN PROGRAM (main.py)
+--------------------------------------------------------------------------------
+
+FUNCTION create_parser() -> ArgumentParser:
+    CREATE parser with program name "rna-simulator"
+    ADD argument --num-sequences / -n  (integer, default=10)
+    ADD argument --output / -o         (string,  default="sequences.fasta")
+    ADD argument --min-length          (integer, default=100)
+    ADD argument --max-length          (integer, default=1000)
+    ADD argument --flanking-prob       (float,   default=0.5)
+    ADD argument --flanking-length     (integer, default=50)
+    ADD argument --completeness        (float,   default=0.7)
+    RETURN parser
+
+
+FUNCTION validate_arguments(args) -> None:
+    IF args.num_sequences < 1 THEN RAISE ValueError
+    IF args.min_length < 3 THEN RAISE ValueError
+    IF args.max_length < args.min_length THEN RAISE ValueError
+    IF args.flanking_prob NOT IN [0.0, 1.0] THEN RAISE ValueError
+    IF args.flanking_length < 1 THEN RAISE ValueError
+    IF args.completeness NOT IN [0.0, 1.0] THEN RAISE ValueError
+
+
+FUNCTION main() -> integer:
+    parser = create_parser()
+    args = parser.parse_args()
+
+    TRY:
+        validate_arguments(args)
+    CATCH ValueError as e:
+        WRITE error message to stderr
+        RETURN 1
+    END TRY
+
+    TRY:
+        simulator = Simulator(
+            num_sequences      = args.num_sequences,
+            min_orf_length     = args.min_length,
+            max_orf_length     = args.max_length,
+            flanking_probability = args.flanking_prob,
+            flanking_length    = args.flanking_length,
+            completeness_ratio = args.completeness
+        )
+        simulator.save_fasta(args.output)
+    CATCH (ValueError, IOError) as e:
+        WRITE error message to stderr
+        RETURN 1
+    END TRY
+
+    WRITE "Successfully generated N sequences" to stdout
+    WRITE "Output saved to: <file>" to stdout
+    RETURN 0
+
+
+PROGRAM ENTRY POINT:
+    IF this script is the main module THEN
+        exit_code = main()
+        EXIT with exit_code
+    END IF

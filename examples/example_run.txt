@@ -1,0 +1,71 @@
+================================================================================
+RNA Simulator - Example Commands and Output
+================================================================================
+
+Example 1: Default parameters (10 sequences, default settings)
+--------------------------------------------------------------------------------
+$ python src/main.py
+
+Output:
+✓ Successfully generated 10 sequences
+✓ Output saved to: sequences.fasta
+
+
+Example 2: Custom number of sequences and output file
+--------------------------------------------------------------------------------
+$ python src/main.py -n 5 -o my_seqs.fasta
+
+Output:
+✓ Successfully generated 5 sequences
+✓ Output saved to: my_seqs.fasta
+
+
+Example 3: Custom length range and completeness ratio
+--------------------------------------------------------------------------------
+$ python src/main.py -n 50 -o custom.fasta --min-length 200 --max-length 2000 --completeness 0.9
+
+Output:
+✓ Successfully generated 50 sequences
+✓ Output saved to: custom.fasta
+
+
+Example 4: No flanking regions, all partial ORFs
+--------------------------------------------------------------------------------
+$ python src/main.py -n 20 --flanking-prob 0.0 --completeness 0.0 -o partial_only.fasta
+
+Output:
+✓ Successfully generated 20 sequences
+✓ Output saved to: partial_only.fasta
+
+
+Example 5: Error - invalid length range
+--------------------------------------------------------------------------------
+$ python src/main.py --min-length 1000 --max-length 100
+
+Output (stderr):
+ERROR: --max-length must be >= --min-length.
+Exit code: 1
+
+
+Example 6: Show help message
+--------------------------------------------------------------------------------
+$ python src/main.py --help
+
+Output:
+usage: rna-simulator [-h] [--num-sequences NUM_SEQUENCES] [--output OUTPUT]
+                     [--min-length MIN_LENGTH] [--max-length MAX_LENGTH]
+                     [--flanking-prob FLANKING_PROB]
+                     [--flanking-length FLANKING_LENGTH]
+                     [--completeness COMPLETENESS]
+
+Generate synthetic RNA sequences in FASTA format.
+
+options:
+  -h, --help            show this help message and exit
+  --num-sequences, -n   Number of sequences to generate. (default: 10)
+  --output, -o          Output FASTA file path. (default: sequences.fasta)
+  --min-length          Minimum ORF length in nucleotides. (default: 100)
+  --max-length          Maximum ORF length in nucleotides. (default: 1000)
+  --flanking-prob       Probability (0.0-1.0) of flanking regions. (default: 0.5)
+  --flanking-length     Length of flanking regions in nucleotides. (default: 50)
+  --completeness        Ratio (0.0-1.0) of complete ORFs. (default: 0.7)
