@@ -30,7 +30,7 @@ A Python command-line tool that generates synthetic RNA sequences in FASTA forma
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/rna-simulator.git
+git clone https://github.com/TahmidA139/rna_stimulator.git
 cd rna-simulator
 ```
 
@@ -178,11 +178,11 @@ rna-simulator/
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the (LICENSE) file for details.
 
 ---
 
 ## Author
 
-Your Name  
-your.email@example.com
+Tahmid Anwar  
+tanwar@charlotte.edu
