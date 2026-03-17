@@ -1,7 +1,7 @@
 ================================================================================
 PSEUDOCODE: RNA Sequence Simulator
 ================================================================================
-Author: Your Name
+Author: Tahmid Anwar
 Date: 2026
 Purpose: Plan the logic for generating synthetic RNA sequences in FASTA format.
 ================================================================================
