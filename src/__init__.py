@@ -7,4 +7,4 @@ characteristics for bioinformatics research and education.
 """
 
 __version__ = "1.0.0"
-__author__ = "Your Name"
+__author__ = "Tahmid Anwar"
